@@ -1,32 +1,22 @@
 from Link_Generator import Link_Generator
 from File_Requester import File_Requester
 from MetaData import MetaData
-from Experiments import Experiments
-
-class DataStructure:
-
-    def __init__(self,json):
-        self.json = json
-        self.__n_exps = len(self.json["experiments"]["experiment"])
+import requests
+import os
 
 
-    def create_experiments(self,n=None):
-        n = self.__n_exps if n is None else n
-        self.experiments = []
-        for i in range(n):
-            dic = self.json["experiments"]["experiment"][i]
-            x = Experiments(dic)
-            self.experiments.append(x)
+class File:
 
-    def get_experiments(self):
-        return self.experiments
+    def __init__(self, kwargs):
+        for k, v in kwargs.items():
+            self.__dict__[k] = v
 
-
-
-
-
-
-
+    def download_file(self,path):
+        req = requests.get(self.url)
+        if not os.path.exists(path):
+            os.mkdir(path)
+        with open(os.path.join(path,self.location),"wb") as f:
+            f.write(req.content)
 
 
 
@@ -55,8 +45,6 @@ if __name__ == "__main__":
     print(exp.get_json_files_request())
     exp.json_files_decoder()
     print(exp.get_decoded_json_files())
-    data = DataStructure(decoder.get_decoded())
-    data.create_experiments(4)
-    print(data.get_experiments())
-    print(data.get_experiments()[3].__dict__)
-
+    file = File(exp.get_decoded_json_files()["files"]["experiment"]["file"][1])
+    print(file.__dict__)
+    file.download_file("C:/Users/utilizador/Google Drive/drive/Bioinformática/1_ano/2_Semestre/Projeto/Scripts/Downloads")
