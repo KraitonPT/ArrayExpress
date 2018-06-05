@@ -1,8 +1,6 @@
-from Link_Generator import Link_Generator
-from File_Requester import File_Requester
-from MetaData import MetaData
 import requests
 import os
+from os.path import isfile, join
 
 
 class File:
@@ -12,6 +10,9 @@ class File:
             self.__dict__[k] = v
 
     def download_file(self,path):
+        files_dir = [f for f in os.listdir(path) if isfile(join(path, f))]
+        if self.location in files_dir:
+            return None
         req = requests.get(self.url)
         if not os.path.exists(path):
             os.mkdir(path)
@@ -36,7 +37,7 @@ if __name__ == "__main__":
     decoder = MetaData(request.get_content(), request.get_url())
     decoder.decode_json()
     print(decoder.get_decoded())
-    exp = Experiments(decoder.get_decoded()["experiments"]["experiment"][0])
+    exp = Experiment(decoder.get_decoded()["experiments"]["experiment"][0])
     print(exp.__dict__)
     print(exp.accession)
     exp.do_files_url()
