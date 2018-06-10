@@ -18,34 +18,3 @@ class MetaData:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-if __name__=="__main__":
-    x = Link_Generator("json")
-    cenas = ["fibroblasts", "cancer"]
-    x.insert_keywords(cenas)
-    dic = {"species": "mus%20musculus", "sa": "fibroblasts"}
-    x.insert_criteria(dic)
-    x.url_generator("experiments")
-    request = File_Requester(x.get_url())
-    print(request.get_url())
-    request.do_request()
-    request.get_request()
-    request.do_content()
-    print(request.get_content())
-    decoder = MetaData(request.get_content(),request.get_url())
-    decoder.decode_json()
-    print(decoder.get_decoded())

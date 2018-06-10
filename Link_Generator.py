@@ -48,14 +48,5 @@ class Link_Generator:
         return self.url
 
 
-if __name__=="__main__":
-    x = Link_Generator("xml")
-    cenas = ["fibroblasts","cancer"]
-    x.insert_keywords(cenas)
-    dic = {"species" : "mus%20musculus", "sa" : "fibroblasts"}
-    x.insert_criteria(dic)
-    x.url_generator("experiments")
-    print(x.url)
-
 
 

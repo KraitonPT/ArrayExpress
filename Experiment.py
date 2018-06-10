@@ -17,7 +17,8 @@ class Experiment:
         for k, v in kwargs.items():
             self.__dict__[k] = v
         self.df = {}
-
+        self.create_files()
+        self.len_proccessed_one = False
 
     def do_files_url(self):
         dic = {"accession": self.accession}
@@ -99,17 +100,29 @@ class Experiment:
             return "There isn't any sdrf file stored"
 
     def get_metada_sdrf(self,files):
-        if "sdrf" in self.df:
+        if "sdrf" in self.df and "concat_processed" in self.df:
+            col_index = self.find_samples().tolist()[0]
             sdrf_df = self.df["sdrf"]
-            metadata = sdrf_df.loc[sdrf_df["Derived Array Data File"].isin(files),:]
+            metadata = sdrf_df.loc[sdrf_df[col_index].isin(files),:]
             return metadata
         else:
-            return "There isn't any sdrf file"
+            return "sdrf or concatenated files don't exist"
+
+    def find_samples(self):
+        if "concat_processed" in self.df:
+            sdrf = self.df["sdrf"]
+            concat_columns = self.df["concat_processed"].columns
+            counts = sdrf.apply(lambda x: sum(x.isin(concat_columns)))
+            sample_col = counts[counts==max(counts)]
+            return sample_col.index
+
 
     def do_processed_file(self,path):
+        if "sdrf" not in self.df:
+            self.do_sdrf_file(path)
         self.df["processed"] = []
         for file in self.files:
-            if file.extension == "zip" and "processed" in file.location:
+            if file.extension == "zip" and "processed.1" in file.location:
                 file.download_file(path)
                 fpath = os.path.join(*[path,file.location])
                 random_string = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(5))
@@ -119,6 +132,8 @@ class Experiment:
                 zip_ref.extractall(zpath)
                 zip_ref.close()
                 onlyfiles = [f for f in os.listdir(zpath) if isfile(join(zpath, f))]
+                if len(onlyfiles) <= 1:
+                    self.len_proccessed_one = True
                 for file in onlyfiles:
                     tpath = os.path.join(*[zpath, file])
                     # with open(tpath, 'r') as f:
@@ -135,11 +150,12 @@ class Experiment:
         else:
             return "There isn't any processed file stored"
 
-    def process_df(self,index):
+    def process_df(self,index_col,index_val):
         if "processed" in self.df:
             df_list = list(zip(*self.get_processed_file()))
-            concat_processed_raw = [df.set_index(index, drop=True) for df in df_list[1]]
-            df_final = pd.concat(concat_processed_raw, axis=1)
+            concat_processed_raw = [df.set_index(index_col, drop=True) for df in df_list[1]]         # alterado
+            value_df = [df[index_val] for df in concat_processed_raw]     # alterado
+            df_final = pd.concat(value_df, axis=1)
             df_final.columns = df_list[0]
             return df_final
         else:
@@ -147,16 +163,23 @@ class Experiment:
 
     def get_col_names(self):
         df_list = self.df["processed"]
-        ind = df_list[0][1].columns[:-1].tolist()
-        val = df_list[0][1].columns[-1]
+        # ind = df_list[0][1].columns[:-1].tolist()
+        # val = df_list[0][1].columns[-1]
+        ind = df_list[0][1].columns[0]
+        val_bol = df_list[0][1].columns == "VALUE"
+        val = df_list[0][1].columns[val_bol]
         return ind,val
 
     def concat_processed(self):
-        if self.df["processed"] != []:
-            index_col,_ = self.get_col_names()
-            df_final = self.process_df(index_col)
-            self.df["concat_processed"] = df_final
-
+        if self.len_proccessed_one:
+            self.df["concat_processed"] = self.df["processed"][0][1]
+            column = self.df["concat_processed"].columns[0]
+            self.df["concat_processed"] = self.df["concat_processed"].set_index(column,drop = True)
+        else:
+            if self.df["processed"] != []:
+                index_col,index_val= self.get_col_names()          #alterado
+                df_final = self.process_df(index_col,index_val)           #alterado
+                self.df["concat_processed"] = df_final
 
 
     def get_concat_processed(self):
@@ -195,46 +218,4 @@ class Experiment:
 
     def get_decoded_json_protocols(self):
         return self.decoded_json_protocols()
-
-if __name__ == "__main__":
-    x = Link_Generator("json")
-    kw = ["leukemia"]
-    x.insert_keywords(kw)
-    dic = {}
-    x.insert_criteria(dic)
-    x.url_generator("experiments")
-    request = File_Requester(x.get_url())
-    print(request.get_url())
-    request.do_request()
-    request.get_request()
-    request.do_content()
-    print(request.get_content())
-    decoder = MetaData(request.get_content(), request.get_url())
-    decoder.decode_json()
-    print(decoder.get_decoded())
-    exp = Experiment(decoder.get_decoded()["experiments"]["experiment"][2])
-    print(exp.__dict__)
-    print(exp.accession)
-    #exp.do_files_url()
-    #print(exp.get_files_url())
-    #exp.json_files_requester()
-    #print(exp.get_json_files_request())
-    #exp.json_files_decoder()
-    #print(exp.get_decoded_json_files())
-    exp.create_files()
-    print(exp.files)
-    #exp.download_all_files("C:/Users/utilizador/Google Drive/drive/Bioinformática/1_ano/2_Semestre/Projeto/Scripts/Downloads")
-    exp.do_idf_file("C:/Users/utilizador/Google Drive/drive/Bioinformática/1_ano/2_Semestre/Projeto/Scripts/Downloads")
-    print(exp.get_idf_file())
-    exp.do_sdrf_file("C:/Users/utilizador/Google Drive/drive/Bioinformática/1_ano/2_Semestre/Projeto/Scripts/Downloads")
-    print(exp.get_sdrf_file())
-    exp.do_processed_file("C:/Users/utilizador/Google Drive/drive/Bioinformática/1_ano/2_Semestre/Projeto/Scripts/Downloads")
-    #print(exp.get_processed_file())
-    print(exp.get_concat_processed())
-    exp.get_concat_processed().to_csv("Expression_Matrix")
-
-
-
-
-
 

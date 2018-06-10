@@ -27,15 +27,3 @@ class File_Requester:
     def get_content(self):
         return self.content
 
-if __name__=="__main__":
-    x = Link_Generator("json")
-    cenas = ["fibroblasts", "cancer"]
-    x.insert_keywords(cenas)
-    dic = {"species": "mus%20musculus", "sa": "fibroblasts"}
-    x.insert_criteria(dic)
-    x.url_generator("experiments")
-    request = File_Requester(x.get_url())
-    print(request.get_url())
-    request.do_request()
-    request.do_content()
-    print(request.get_content())
