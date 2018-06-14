@@ -5,7 +5,7 @@ class Link_Generator:
         self.criteria = criteria
         self.choose_format(format)
 
-    def choose_format(self,format):
+    def choose_format(self,format):             # Chooses the format of the obtained request
         if format == "xml" or format == "json":
             self.base_exp = "https://www.ebi.ac.uk/arrayexpress/" + format + "/v3/experiments"
             self.base_prot = "https://www.ebi.ac.uk/arrayexpress/" + format + "/v3/protocols"
@@ -13,13 +13,13 @@ class Link_Generator:
         else:
             print("Selected file format isn't available")
 
-    def insert_keywords(self,keywords):
+    def insert_keywords(self,keywords):     # Stores the keywords to be searched
         self.keywords = keywords
 
-    def insert_criteria(self,dic):
+    def insert_criteria(self,dic):          # Stores the criteria to be searched
         self.criteria = dic
 
-    def url_generator(self,type):
+    def url_generator(self,type):           # Generates URL
         dic = {"experiments":self.base_exp,"protocols":self.base_prot,"files":self.base_file}
 
         if type not in dic:
@@ -44,7 +44,7 @@ class Link_Generator:
 
             self.url = string
 
-    def get_url(self):
+    def get_url(self):          # Returns URL
         return self.url
 
 
